@@ -9,20 +9,91 @@ app.use(cors());
 
 const users = [];
 
+function findUserByUserName(username) {
+  return users.find( (user) => user.username === username )
+}
+
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers
+
+  if ((!username) || (username == '')) {
+    return response.status(400).json({error: "O username não foi informado!"})
+  }
+
+  const user = findUserByUserName(username)
+
+  if (!user) {
+    return response.status(404).json({error: "Usuário não foi encontrado!"})
+  }
+
+  request.user = user
+  next()
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+
+  if (!request.user) {
+    return response.status(400).json({error: "Usuário não foi informado para a consulta dos todos!"})
+  }
+
+  const { user } = request
+  
+  if ((!user.pro) && (user.todos.length >= 10)) {
+
+    return response.status(403).json({error: "Não é possível criar nenhum todo, limite excedido!"})
+  }
+
+  next()
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers
+  const { id } = request.params
+  
+  if (!username) {
+    return response.status(400).json({error: "O username não foi informado!"})
+  }
+
+  const user = findUserByUserName(username)
+
+  if (!user) {
+    return response.status(404).json({error: "Usuário não foi encontrado!"})
+  }
+  
+  if (!validate(id)) {
+    return response.status(400).json({error: "O id informado não é válido!"})
+  }
+
+  const todo = user.todos.find( (todo) => todo.id === id )
+
+  if (!todo) {
+    return response.status(404).json({error: "O id informado não pertence a nenhum todo do usuário!"})
+  }
+  
+  request.user = user
+  request.todo = todo
+  next()
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const { id } = request.params
+
+  if (!id) {
+    return response.status(400).json({error: "Nenhum id de consulta para usuário foi informado!"})
+  }
+  
+  if (!validate(id)) {
+    return response.status(400).json({error: "O id informado não é válido!"})
+  }
+  
+  const user = users.find( (user) => user.id ===id )
+
+  if (!user) {
+    return response.status(404).json({error: "Usuário não foi encontrado!"})
+  }
+
+  request.user = user
+  next()
 }
 
 app.post('/users', (request, response) => {
